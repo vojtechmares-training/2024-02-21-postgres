@@ -1,0 +1,61 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgres
+  namespace: default
+spec:
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.1
+  instances: 3
+  primaryUpdateStrategy: unsupervised
+  primaryUpdateMethod: switchover
+  superuserSecret:
+    name: superuser-credentials
+  storage:
+    storageClass: do-block-storage
+    size: 20Gi
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 4Gi
+    requests:
+      cpu: 1000m
+      memory: 4Gi
+  bootstrap:
+    initdb:
+      database: app
+      owner: app
+      secret:
+        name: app-credentials
+      postInitSQL:
+        - ALTER ROLE app WITH LOGIN;
+  ## Postgres configuration ##
+  # Enable 'postgres' superuser
+  enableSuperuserAccess: true
+  # Postgres instance parameters
+  postgresql:
+    parameters:
+      max_connections: "500"
+  # High Availability configuration
+  minSyncReplicas: 1
+  maxSyncReplicas: 2
+  # Enable replication slots for HA in the cluster
+  replicationSlots:
+    highAvailability:
+      enabled: true
+  # backup:
+  #   retentionPolicy: "30d"
+  #   barmanObjectStore:
+  #     destinationPath: "s3://demo-postgres-backups/"
+  #     wal:
+  #       compression: bzip2
+  #     data:
+  #       compression: bzip2
+  #     s3Credentials:
+  #       accessKeyId:
+  #         name: aws-backup-s3-credentials
+  #         key: ACCESS_KEY_ID
+  #       secretAccessKey:
+  #         name: aws-backup-s3-credentials
+  #         key: ACCESS_SECRET_KEY
+  monitoring:
+    enablePodMonitor: true

@@ -1,0 +1,21 @@
+ingressClassResource:
+  default: true
+
+controller:
+  kind: DaemonSet
+
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+
+  config:
+    allow-snippet-annotations: "true"
+    generate-request-id: "true"
+    use-proxy-protocol: "true"
+
+  service:
+    type: NodePort
+    nodePorts:
+      http: "32080"
+      https: "32443"

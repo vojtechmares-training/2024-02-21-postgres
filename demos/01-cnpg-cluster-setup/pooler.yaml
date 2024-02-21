@@ -1,0 +1,44 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Pooler
+metadata:
+  name: pgbouncer
+  namespace: default
+spec:
+  cluster:
+    name: postgres
+  instances: 3
+  type: rw
+  pgbouncer:
+    poolMode: session
+    parameters:
+      # 3 replicas with 100 connections = 300 connections total
+      # postgres has max of 500 connections
+      max_client_conn: "100"
+      default_pool_size: "10"
+      ignore_startup_parameters: "search_path"
+  deploymentStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  monitoring:
+    enablePodMonitor: true
+
+  # PodTemplateSpec
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: pooler
+    spec:
+      containers: [] # suppress error
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                        - pooler
+                topologyKey: kubernetes.io/hostname # node hostname
